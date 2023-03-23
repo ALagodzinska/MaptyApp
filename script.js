@@ -240,11 +240,11 @@ class App {
     };
 
     const hideMessage = function () {
-      setInterval(function () {
+      setTimeout(function () {
         messageContainer.classList.add('animated');
       }, 3000);
 
-      setInterval(function () {
+      setTimeout(function () {
         messageContainer.classList.add('hidden');
         messageContainer.classList.remove('animated');
       }, 4000);
