@@ -19,16 +19,21 @@ const sortByDate = document.querySelector('.sort-date');
 const sortByDistance = document.querySelector('.sort-distance');
 const sortByTime = document.querySelector('.sort-time');
 const refreshSort = document.getElementById('refresh-sort');
+const messageContainer = document.querySelector('.message');
+const messageIcon = document.querySelector('.message-icon');
+const messageText = document.querySelector('.message-text');
 
 class Workout {
-  id = (Date.now() + '').slice(-10);
-  date = new Date();
+  // id = (Date.now() + '').slice(-10);
+  // date = new Date();
   clicks = 0;
 
-  constructor(coords, distance, duration) {
+  constructor(coords, distance, duration, id, date) {
     this.coords = coords; // [lat,lng]
     this.distance = distance; // in km
     this.duration = duration; // in min
+    this.id = id ? (this.id = id) : (id = (Date.now() + '').slice(-10));
+    this.date = date ? (this.date = date) : new Date();
   }
 
   _setDescription() {
@@ -44,8 +49,8 @@ class Workout {
 
 class Running extends Workout {
   type = 'running';
-  constructor(coords, distance, duration, cadence) {
-    super(coords, distance, duration);
+  constructor(coords, distance, duration, cadence, id, date) {
+    super(coords, distance, duration, id, date);
     this.cadence = cadence;
     this.calcPace();
     this._setDescription();
@@ -60,8 +65,8 @@ class Running extends Workout {
 
 class Cycling extends Workout {
   type = 'cycling';
-  constructor(coords, distance, duration, elevationGain) {
-    super(coords, distance, duration);
+  constructor(coords, distance, duration, elevationGain, id, date) {
+    super(coords, distance, duration, id, date);
     this.elevationGain = elevationGain;
     this.calcSpeed();
     this._setDescription();
@@ -179,7 +184,9 @@ class App {
   _showForm(mapE) {
     this.#mapEvent = mapE;
     form.classList.remove('hidden');
+    sortBar.classList.add('hidden');
     inputDistance.focus();
+    this._refreshFilters();
   }
 
   _hideForm() {
@@ -216,11 +223,39 @@ class App {
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
+    const sucessMessage = function () {
+      messageContainer.classList.add('correct');
+      messageContainer.classList.remove('warning');
+      messageContainer.classList.remove('hidden');
+      messageText.innerHTML = 'Workout sucessefully created!';
+      messageIcon.src = 'correct.png';
+    };
+
+    const errorMessage = function () {
+      messageContainer.classList.add('warning');
+      messageContainer.classList.remove('correct');
+      messageContainer.classList.remove('hidden');
+      messageText.innerHTML = 'Inputs have to be positive numbers!';
+      messageIcon.src = 'warning.png';
+    };
+
+    const hideMessage = function () {
+      setInterval(function () {
+        messageContainer.classList.add('animated');
+      }, 3000);
+
+      setInterval(function () {
+        messageContainer.classList.add('hidden');
+        messageContainer.classList.remove('animated');
+      }, 4000);
+    };
+
     // Check if data is valid
 
     // If workout running, create running object
     if (type === 'running') {
       const cadence = +inputCadence.value;
+
       // Check if data is valid
       if (
         !validInputs(distance, duration, cadence) ||
@@ -228,8 +263,11 @@ class App {
         // !Number.isFinite(distance) ||
         // !Number.isFinite(duration) ||
         // !Number.isFinite(cadence)
-      )
-        return alert('Inputs have to be positive numbers!');
+      ) {
+        errorMessage();
+        hideMessage();
+        return;
+      }
 
       workout = new Running([lat, lng], distance, duration, cadence);
     }
@@ -240,8 +278,11 @@ class App {
       if (
         !validInputs(distance, duration, elevation) ||
         !allPositive(distance, duration)
-      )
-        return alert('Inputs have to be positive numbers!');
+      ) {
+        errorMessage();
+        hideMessage();
+        return;
+      }
 
       workout = new Cycling([lat, lng], distance, duration, elevation);
     }
@@ -256,6 +297,9 @@ class App {
     this._renderWorkoutMarker(workout);
     // Render workout on list
     this._renderWorkout(workout);
+    // display sucess message
+    sucessMessage();
+    hideMessage();
 
     // Hide form + clear input fields
     this._hideForm();
@@ -408,8 +452,32 @@ class App {
 
     if (!data) return;
 
-    this.#workouts = data;
-    // console.log(this.#workouts);
+    data.forEach(workout => {
+      let newWorkout;
+      if (workout.type === 'running') {
+        newWorkout = new Running(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.cadence,
+          workout.id,
+          new Date(workout.date)
+        );
+      } else if (workout.type === 'cycling') {
+        newWorkout = new Cycling(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.elevationGain,
+          workout.id,
+          new Date(workout.date)
+        );
+      }
+
+      if (newWorkout) {
+        this.#workouts.push(newWorkout);
+      }
+    });
 
     this.#workouts.forEach(workout => {
       this._renderWorkout(workout);

@@ -293,7 +293,8 @@ a:visited {
 }
 
 .button-81:hover {
-  background-color: #0b8339;
+  /* background-color: #0b8339; */
+  background-color: var(--color-brand--2);
   color: #fff;
 }
 
@@ -301,5 +302,60 @@ a:visited {
   .button-81 {
     font-size: 1.125rem;
     padding: 1rem 2rem;
+  }
+}
+
+.message {
+  border-style: solid;
+  border-width: 5px;
+  border-radius: 5px;
+  padding: 0.8rem 2.25rem;
+  margin-bottom: 1.75rem;
+  font-size: 18px;
+  animation: fadeIn 0.5s;
+}
+
+.correct {
+  background-color: #1b865437;
+  border-color: #0b8b3c;
+}
+
+.warning {
+  background-color: #b9313138;
+  border-color: #a3230d;
+}
+
+.message-icon {
+  height: 20px;
+  width: 20px;
+}
+
+.message-text {
+  margin-left: 10px;
+}
+
+.message.hidden {
+  display: none;
+}
+
+.message.animated {
+  animation: fadeOut 2s;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
