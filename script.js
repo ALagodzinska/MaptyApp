@@ -22,6 +22,7 @@ const refreshSort = document.getElementById('refresh-sort');
 const messageContainer = document.querySelector('.message');
 const messageIcon = document.querySelector('.message-icon');
 const messageText = document.querySelector('.message-text');
+const zoomOutBtn = document.getElementById('zoomOutButton');
 
 class Workout {
   // id = (Date.now() + '').slice(-10);
@@ -130,6 +131,8 @@ class App {
     sortByTime.addEventListener('click', this._sortWorkoutsByTime.bind(this));
 
     refreshSort.addEventListener('click', this._refreshFilters.bind(this));
+
+    zoomOutBtn.addEventListener('click', this._zoomOutMap.bind(this));
   }
 
   _getPostition() {
@@ -582,6 +585,18 @@ class App {
   _refreshFilters() {
     this.#filteredWorkouts = [...this.#workouts];
     this._updateUI();
+  }
+
+  _zoomOutMap() {
+    const maxValLat = Math.max(...this.#workouts.map(work => work.coords[0]));
+    const minValLat = Math.min(...this.#workouts.map(work => work.coords[0]));
+    const maxValLng = Math.max(...this.#workouts.map(work => work.coords[1]));
+    const minValLng = Math.min(...this.#workouts.map(work => work.coords[1]));
+    var latlngbounds = new L.latLngBounds(
+      [maxValLat, maxValLng],
+      [minValLat, minValLng]
+    );
+    this.#map.fitBounds(latlngbounds);
   }
 
   _updateUI() {
