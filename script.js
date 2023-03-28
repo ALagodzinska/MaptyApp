@@ -24,6 +24,19 @@ const messageIcon = document.querySelector('.message-icon');
 const messageText = document.querySelector('.message-text');
 const zoomOutBtn = document.getElementById('zoomOutButton');
 
+/// Map Icons
+// popup for next path ways
+const pointIcon = L.icon({
+  iconUrl: 'dot.png',
+  iconSize: [20, 20],
+});
+
+const locationIcon = L.icon({
+  iconUrl: 'location.png',
+  iconSize: [30, 30],
+});
+///
+
 class Workout {
   // id = (Date.now() + '').slice(-10);
   // date = new Date();
@@ -94,11 +107,25 @@ class App {
   #mapEvent;
   #workouts = [];
   #markerGroup;
+  // filtering/sorting
   #filteredWorkouts = [];
   #sortType = 'all';
   #sortDate = 'desc';
   #sortDistance = '';
   #sortTime = '';
+  // draw path
+  // check if path is finished
+  #isPathFinished = false;
+  // store all points for current path
+  #markers = [];
+  // main marker layer
+  #mainMarkers;
+  // temporary marker layer
+  #tempMarkers;
+  // temporary lines layer
+  #tempLines;
+  // main lines layer
+  #lines;
 
   constructor() {
     // Get Users Position
@@ -133,6 +160,37 @@ class App {
     refreshSort.addEventListener('click', this._refreshFilters.bind(this));
 
     zoomOutBtn.addEventListener('click', this._zoomOutMap.bind(this));
+
+    document.querySelector('#map').addEventListener(
+      'keypress',
+      function (e) {
+        if (e.key === 'Enter' && !this.#isPathFinished) {
+          this._setPath();
+        }
+      }.bind(this)
+    );
+
+    document.querySelector('#map').addEventListener(
+      'keydown',
+      function (e) {
+        if (e.key === 'Escape') {
+          // clear temporary drawings
+          // remove temporary markers
+          this._clearTempData();
+          // remove main marker from the map
+          this.#map.removeLayer(this.#mainMarkers);
+          this.#mainMarkers = L.layerGroup().addTo(this.#map);
+          // remove path from the map
+          this.#map.removeLayer(this.#lines);
+          this.#lines = L.layerGroup().addTo(this.#map);
+          // clear markers array
+          this.#markers = [];
+          // close form
+          // allow to add new workout
+          this.#isPathFinished = false;
+        }
+      }.bind(this)
+    );
   }
 
   _getPostition() {
@@ -167,6 +225,14 @@ class App {
     // console.log(map);
     // add layer of markers
     this.#markerGroup = L.layerGroup().addTo(this.#map);
+    // Set Main markers
+    this.#mainMarkers = L.layerGroup().addTo(this.#map);
+    // Set temp markers
+    this.#tempMarkers = L.layerGroup().addTo(this.#map);
+    // Set temporary lines layer
+    this.#tempLines = L.layerGroup().addTo(this.#map);
+    // Set main lines layer
+    this.#lines = L.layerGroup().addTo(this.#map);
 
     // map from openstreetmap
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -176,12 +242,170 @@ class App {
 
     // si,ilar to event listener
     // Handling clicks onb map
-    this.#map.on('click', this._showForm.bind(this));
+    // this.#map.on('click', this._showForm.bind(this));
+    this.#map.on('click', this._onMapClick.bind(this));
 
     // render markers when map is loaded
     this.#workouts.forEach(workout => {
       this._renderWorkoutMarker(workout);
     });
+  }
+
+  _onMapClick(e) {
+    // return if path is finished
+    if (this.#isPathFinished) return;
+
+    let marker;
+
+    // create map pints
+    if (this.#markers.length === 0) {
+      marker = this._createStartPoint(e);
+    } else {
+      marker = this._createPoint(e);
+    }
+    // add coordinates to list
+    const coords2 = marker.getLatLng();
+    this.#markers.push(coords2);
+  }
+
+  _createStartPoint(e) {
+    // create marker
+    const marker = this._createMainMarker(e.latlng);
+
+    // .openPopup();
+    // add event to marker
+    marker.addEventListener(
+      'click',
+      function () {
+        if (this.#markers.length > 1 && !this.#isPathFinished) {
+          this.#markers.push(marker.getLatLng());
+          this._setPath();
+        }
+      }.bind(this)
+    );
+    // add marker to main markers layer
+    marker.addTo(this.#mainMarkers);
+
+    return marker;
+  }
+
+  _createPoint(e) {
+    // create marker
+    const marker = L.marker(e.latlng, { icon: pointIcon }).addTo(this.#map);
+    // add marker to temporary layer
+    marker.addTo(this.#tempMarkers);
+    // draw temp line
+    this._drawTempLine(marker);
+    // add event onclick
+    marker.addEventListener(
+      'click',
+      function () {
+        if (
+          this.#markers[this.#markers.length - 1] === marker.getLatLng() &&
+          !this.#isPathFinished
+        ) {
+          this._setPath();
+          document.querySelector('#map').focus();
+        }
+      }.bind(this)
+    );
+
+    return marker;
+  }
+
+  _drawTempLine(marker) {
+    // get temp coords to draw a line
+    const tempLineCoords = [
+      this.#markers[this.#markers.length - 1],
+      marker.getLatLng(),
+    ];
+    // draw
+    const templine = L.polyline(tempLineCoords, {
+      color: 'red',
+      opacity: 0.5,
+      dashArray: '10, 10',
+      dashOffset: '20',
+    }).addTo(this.#map);
+    // add temporary line to layer
+    templine.addTo(this.#tempLines);
+  }
+
+  _createMainMarker(latlng) {
+    const marker = L.marker(latlng, { icon: locationIcon }).addTo(this.#map);
+    marker
+      .bindPopup(
+        // specify popup
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          autoClose: false,
+          closeOnClick: false,
+        })
+      )
+      .setPopupContent(`Main Point!<br/> Start! `);
+
+    return marker;
+  }
+
+  _createRandomColor() {
+    var randomColor = Math.floor(Math.random() * 16777215).toString(16);
+    return '#' + randomColor;
+  }
+
+  _lastPoint(latlng) {
+    const marker = L.marker(latlng, { icon: locationIcon }).addTo(this.#map);
+    marker.addTo(this.#mainMarkers);
+
+    return marker;
+  }
+
+  _clearTempData() {
+    // remove temporary markers
+    this.#map.removeLayer(this.#tempMarkers);
+    this.#tempMarkers = L.layerGroup().addTo(this.#map);
+
+    // remove temporary lines
+    this.#map.removeLayer(this.#tempLines);
+    this.#tempLines = L.layerGroup().addTo(this.#map);
+  }
+
+  _setPath() {
+    // make path variable finished
+    this.#isPathFinished = true;
+
+    // set final line!
+    const polyline = L.polyline(this.#markers, {
+      color: this._createRandomColor(),
+      weight: 5,
+    }).addTo(this.#map);
+
+    // add popup to line
+    polyline
+      .bindPopup(
+        // specify popup
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          autoClose: false,
+          closeOnClick: false,
+        })
+      )
+      .setPopupContent(`Line Popup!<br/> Hello! `)
+      .openPopup();
+
+    // add line to a layer
+    polyline.addTo(this.#lines);
+    // add last point
+    const lastmarker =
+      this.#markers[this.#markers.length - 1] !== this.#markers[0]
+        ? this.#markers[this.#markers.length - 1]
+        : null;
+    if (lastmarker) {
+      this._lastPoint(lastmarker);
+    }
+
+    // remove temporary lines and points
+    this._clearTempData();
   }
 
   _showForm(mapE) {
