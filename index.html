@@ -19,14 +19,7 @@
       integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
       crossorigin=""
     />
-    <script
-      defer
-      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-      crossorigin=""
-    ></script>
 
-    <script defer src="script.js"></script>
     <title>mapty // Map your workouts</title>
   </head>
   <body>
@@ -152,5 +145,15 @@
 
     <div id="map" tabindex="1"></div>
     <button id="zoomOutButton" class="button-82">SEE ALL</button>
+
+    <!-- App scripts -->
+    <script
+      defer
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <script defer src="src/index.js" type="module"></script>
   </body>
 </html>

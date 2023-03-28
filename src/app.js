@@ -1,8 +1,7 @@
 'use strict';
 
-// use to tell prettier to ignore the next linke
-// prettier-ignore
-const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+import { WorkoutStorage } from './storage.js';
+import { Running, Cycling } from './workouts.js';
 
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
@@ -35,68 +34,6 @@ const locationIcon = L.icon({
   iconUrl: 'location.png',
   iconSize: [30, 30],
 });
-///
-
-class Workout {
-  // id = (Date.now() + '').slice(-10);
-  // date = new Date();
-  clicks = 0;
-
-  constructor(coords, distance, duration, id, date) {
-    this.coords = coords; // [lat,lng]
-    this.distance = distance; // in km
-    this.duration = duration; // in min
-    this.id = id ? (this.id = id) : (id = (Date.now() + '').slice(-10));
-    this.date = date ? (this.date = date) : new Date();
-  }
-
-  _setDescription() {
-    this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
-      months[this.date.getMonth()]
-    } ${this.date.getDate()}`;
-  }
-
-  click() {
-    this.clicks++;
-  }
-}
-
-class Running extends Workout {
-  type = 'running';
-  constructor(coords, distance, duration, cadence, id, date) {
-    super(coords, distance, duration, id, date);
-    this.cadence = cadence;
-    this.calcPace();
-    this._setDescription();
-  }
-
-  calcPace() {
-    // min/km
-    this.pace = this.duration / this.distance;
-    return this.pace;
-  }
-}
-
-class Cycling extends Workout {
-  type = 'cycling';
-  constructor(coords, distance, duration, elevationGain, id, date) {
-    super(coords, distance, duration, id, date);
-    this.elevationGain = elevationGain;
-    this.calcSpeed();
-    this._setDescription();
-  }
-
-  calcSpeed() {
-    //km/h
-    this.speed = this.distance / this.duration / 60;
-    return this.speed;
-  }
-}
-
-// const run1 = new Running([39, -12], 5.2, 25, 178);
-// const cycling1 = new Cycling([39, -12], 27, 95, 523);
-// console.log(run1, cycling1);
-
 ///////////////////////////////////
 
 // APPLICATION ARCHITECTURE
@@ -127,12 +64,20 @@ class App {
   // main lines layer
   #lines;
 
+  // workout storage
+  #storage;
+
   constructor() {
+    // initialize storage
+    this.#storage = new WorkoutStorage();
+
     // Get Users Position
     this._getPostition();
 
     // Get data from Local storage
-    this._getLocalStorage();
+    this.#workouts = this.#storage.get();
+    // Render workouts
+    this._renderWorkouts();
 
     // Attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
@@ -450,11 +395,11 @@ class App {
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
-    const sucessMessage = function () {
+    const successMessage = function () {
       messageContainer.classList.add('correct');
       messageContainer.classList.remove('warning');
       messageContainer.classList.remove('hidden');
-      messageText.innerHTML = 'Workout sucessefully created!';
+      messageText.innerHTML = 'Workout successfully created!';
       messageIcon.src = 'correct.png';
     };
 
@@ -496,7 +441,12 @@ class App {
         return;
       }
 
-      workout = new Running([lat, lng], distance, duration, cadence);
+      workout = new Running({
+        coords: [lat, lng],
+        distance,
+        duration,
+        cadence,
+      });
     }
 
     // If workout cycling, create cycling object
@@ -511,7 +461,12 @@ class App {
         return;
       }
 
-      workout = new Cycling([lat, lng], distance, duration, elevation);
+      workout = new Cycling({
+        coords: [lat, lng],
+        distance,
+        duration,
+        elevation,
+      });
     }
 
     // Add new object to workout array
@@ -520,19 +475,19 @@ class App {
 
     // Render workout on map as marker
     // console.log(this.#mapEvent);
-    // taqke longitute and latitude of click
+    // take longitude and latitude of click
     this._renderWorkoutMarker(workout);
     // Render workout on list
     this._renderWorkout(workout);
-    // display sucess message
-    sucessMessage();
+    // display success message
+    successMessage();
     hideMessage();
 
     // Hide form + clear input fields
     this._hideForm();
 
     // Set local storage to all workouts
-    this._setLocalStorage();
+    this.#storage.set(this.#workouts);
   }
 
   _renderWorkoutMarker(workout) {
@@ -641,8 +596,10 @@ class App {
     const index = this.#workouts.indexOf(workout);
     // remove from workout list
     this.#workouts.splice(index, 1);
-    // update workouts
-    this._updateWorkouts();
+    // set storage with new list (rewrites existing item)
+    this.#storage.set(this.#workouts);
+    // foreach display new workout
+    this._renderWorkouts();
     // clear markers
     this.#map.removeLayer(this.#markerGroup);
     // add present markers
@@ -652,63 +609,11 @@ class App {
     });
   }
 
-  _updateWorkouts() {
-    // remove storage
-    localStorage.removeItem('workouts');
-    // set storage with new list
-    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  _renderWorkouts() {
     // clear list of workouts html
     containerWorkouts.querySelectorAll('.workout').forEach(el => el.remove());
-    // foreach display new workout
-    this.#workouts.forEach(workout => {
-      this._renderWorkout(workout);
-    });
-  }
-
-  _setLocalStorage() {
-    // api that browser provides
-    // setting all workouts to local storage
-    // use only for small amounts of data
-    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
-  }
-
-  _getLocalStorage() {
-    // When we convert object to a string and back to object we loose prototype chain
-    const data = JSON.parse(localStorage.getItem('workouts'));
-    // console.log(data);
-
-    if (!data) return;
-
-    data.forEach(workout => {
-      let newWorkout;
-      if (workout.type === 'running') {
-        newWorkout = new Running(
-          workout.coords,
-          workout.distance,
-          workout.duration,
-          workout.cadence,
-          workout.id,
-          new Date(workout.date)
-        );
-      } else if (workout.type === 'cycling') {
-        newWorkout = new Cycling(
-          workout.coords,
-          workout.distance,
-          workout.duration,
-          workout.elevationGain,
-          workout.id,
-          new Date(workout.date)
-        );
-      }
-
-      if (newWorkout) {
-        this.#workouts.push(newWorkout);
-      }
-    });
-
-    this.#workouts.forEach(workout => {
-      this._renderWorkout(workout);
-    });
+    // render
+    this.#workouts.forEach(this._renderWorkout);
   }
 
   _showSortBar() {
@@ -839,4 +744,4 @@ class App {
   }
 }
 
-const app = new App();
+export { App };
