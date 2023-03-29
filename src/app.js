@@ -2,6 +2,7 @@
 
 import { WorkoutStorage } from './storage.js';
 import { Running, Cycling } from './workouts.js';
+import { Map } from './map.js';
 
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
@@ -40,6 +41,7 @@ const locationIcon = L.icon({
 class App {
   // Private instance properties
   #map;
+  #mapContainer;
   #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
@@ -67,17 +69,32 @@ class App {
   // workout storage
   #storage;
 
-  constructor() {
+  async start() {
     // initialize storage
     this.#storage = new WorkoutStorage();
 
     // Get Users Position
-    this._getPostition();
+    this.#map = new Map();
+    this.#map.renderContainer();
+    await this.#map.detectCurrentLocation();
+
+    // TODO : remove this variable
+    this.#mapContainer = this.#map.container;
+
+    // similar to event listener
+    // Handling clicks onb map
+    // this.#map.on('click', this._showForm.bind(this));
+    this.#map.container.on('click', this._onMapClick.bind(this));
+
+    // const pathDrawer = new PathDrawer();
+    // this.#map.container.on('click', pathDrawer.renderNextMarker);
 
     // Get data from Local storage
     this.#workouts = this.#storage.get();
     // Render workouts
     this._renderWorkouts();
+    // Render markers
+    this._renderWorkoutMarkers(this.#map);
 
     // Attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
@@ -138,64 +155,6 @@ class App {
     );
   }
 
-  _getPostition() {
-    // takes two callback function - one -sucess, second -error
-    // Geolocation api
-    if (navigator.geolocation) {
-      // bind this keyword to point to an object
-      navigator.geolocation.getCurrentPosition(
-        this._loadMap.bind(this),
-        function () {
-          alert('Could not get your position!');
-        }
-      );
-    }
-  }
-
-  _loadMap(position) {
-    const { latitude } = position.coords;
-    const { longitude } = position.coords;
-    // console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
-
-    // map - element where to display a map
-    // L - namespace
-    // any variable that is global in any script will be available to other scripts as long as they appear after
-
-    const coords = [latitude, longitude];
-
-    // 13 - number responsible for zoom in and zoom out
-    // can add an event listener
-    // cosnsole.log(this);
-    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
-    // console.log(map);
-    // add layer of markers
-    this.#markerGroup = L.layerGroup().addTo(this.#map);
-    // Set Main markers
-    this.#mainMarkers = L.layerGroup().addTo(this.#map);
-    // Set temp markers
-    this.#tempMarkers = L.layerGroup().addTo(this.#map);
-    // Set temporary lines layer
-    this.#tempLines = L.layerGroup().addTo(this.#map);
-    // Set main lines layer
-    this.#lines = L.layerGroup().addTo(this.#map);
-
-    // map from openstreetmap
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.#map);
-
-    // si,ilar to event listener
-    // Handling clicks onb map
-    // this.#map.on('click', this._showForm.bind(this));
-    this.#map.on('click', this._onMapClick.bind(this));
-
-    // render markers when map is loaded
-    this.#workouts.forEach(workout => {
-      this._renderWorkoutMarker(workout);
-    });
-  }
-
   _onMapClick(e) {
     // return if path is finished
     if (this.#isPathFinished) return;
@@ -236,7 +195,9 @@ class App {
 
   _createPoint(e) {
     // create marker
-    const marker = L.marker(e.latlng, { icon: pointIcon }).addTo(this.#map);
+    const marker = L.marker(e.latlng, { icon: pointIcon }).addTo(
+      this.#mapContainer
+    );
     // add marker to temporary layer
     marker.addTo(this.#tempMarkers);
     // draw temp line
@@ -270,13 +231,15 @@ class App {
       opacity: 0.5,
       dashArray: '10, 10',
       dashOffset: '20',
-    }).addTo(this.#map);
+    }).addTo(this.#mapContainer);
     // add temporary line to layer
     templine.addTo(this.#tempLines);
   }
 
   _createMainMarker(latlng) {
-    const marker = L.marker(latlng, { icon: locationIcon }).addTo(this.#map);
+    const marker = L.marker(latlng, { icon: locationIcon }).addTo(
+      this.#mapContainer
+    );
     marker
       .bindPopup(
         // specify popup
@@ -298,7 +261,9 @@ class App {
   }
 
   _lastPoint(latlng) {
-    const marker = L.marker(latlng, { icon: locationIcon }).addTo(this.#map);
+    const marker = L.marker(latlng, { icon: locationIcon }).addTo(
+      this.#mapContainer
+    );
     marker.addTo(this.#mainMarkers);
 
     return marker;
@@ -306,12 +271,12 @@ class App {
 
   _clearTempData() {
     // remove temporary markers
-    this.#map.removeLayer(this.#tempMarkers);
-    this.#tempMarkers = L.layerGroup().addTo(this.#map);
+    this.#mapContainer.removeLayer(this.#tempMarkers);
+    this.#tempMarkers = L.layerGroup().addTo(this.#mapContainer);
 
     // remove temporary lines
-    this.#map.removeLayer(this.#tempLines);
-    this.#tempLines = L.layerGroup().addTo(this.#map);
+    this.#mapContainer.removeLayer(this.#tempLines);
+    this.#tempLines = L.layerGroup().addTo(this.#mapContainer);
   }
 
   _setPath() {
@@ -322,7 +287,7 @@ class App {
     const polyline = L.polyline(this.#markers, {
       color: this._createRandomColor(),
       weight: 5,
-    }).addTo(this.#map);
+    }).addTo(this.#mapContainer);
 
     // add popup to line
     polyline
@@ -490,10 +455,19 @@ class App {
     this.#storage.set(this.#workouts);
   }
 
-  _renderWorkoutMarker(workout) {
+  _renderWorkoutMarkers(map) {
+    // clear markers
+    map.workoutsLayer.clearLayers();
+    // add present markers
+    this.#workouts.forEach(workout => {
+      this._renderWorkoutMarker(workout, map.workoutsLayer);
+    });
+  }
+
+  _renderWorkoutMarker(workout, workoutsLayer) {
     const marker = L.marker(workout.coords);
     marker
-      .addTo(this.#map)
+      .addTo(workoutsLayer)
       .bindPopup(
         // specify popup
         L.popup({
@@ -502,17 +476,13 @@ class App {
           autoClose: false,
           closeOnClick: false,
           className: `${workout.type}-popup`,
+          autoPan: false,
         })
       )
       .setPopupContent(
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
       )
       .openPopup();
-
-    // add marker to marker layer
-    // marker.id = workout.id;
-    marker.addTo(this.#markerGroup);
-    // console.log(marker);
   }
 
   _renderWorkout(workout) {
@@ -581,7 +551,7 @@ class App {
 
     // console.log(workout);
     // move map to object position
-    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+    this.#mapContainer.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
       pan: {
         duration: 1,
@@ -601,9 +571,9 @@ class App {
     // foreach display new workout
     this._renderWorkouts();
     // clear markers
-    this.#map.removeLayer(this.#markerGroup);
+    this.#mapContainer.removeLayer(this.#markerGroup);
     // add present markers
-    this.#markerGroup = L.layerGroup().addTo(this.#map);
+    this.#markerGroup = L.layerGroup().addTo(this.#mapContainer);
     this.#workouts.forEach(workout => {
       this._renderWorkoutMarker(workout);
     });
@@ -725,7 +695,7 @@ class App {
       [maxValLat, maxValLng],
       [minValLat, minValLng]
     );
-    this.#map.fitBounds(latlngbounds);
+    this.#mapContainer.fitBounds(latlngbounds);
   }
 
   _updateUI() {
