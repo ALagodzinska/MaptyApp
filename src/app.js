@@ -3,6 +3,8 @@
 import { WorkoutStorage } from './storage.js';
 import { Running, Cycling } from './workouts.js';
 import { Map } from './map.js';
+import { PathDrawer } from './pathDrawer.js';
+import { Form } from './form.js';
 
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
@@ -68,6 +70,8 @@ class App {
 
   // workout storage
   #storage;
+  // path
+  #pathDrawer;
 
   async start() {
     // initialize storage
@@ -78,13 +82,17 @@ class App {
     this.#map.renderContainer();
     await this.#map.detectCurrentLocation();
 
+    // initialize path drawer
+    this.#pathDrawer = new PathDrawer(this.#map);
+
     // TODO : remove this variable
     this.#mapContainer = this.#map.container;
 
     // similar to event listener
     // Handling clicks onb map
     // this.#map.on('click', this._showForm.bind(this));
-    this.#map.container.on('click', this._onMapClick.bind(this));
+    // this.#map.container.on('click', this._onMapClick.bind(this));
+    this.#map.container.on('click', e => this.#pathDrawer.drawPath(e.latlng));
 
     // const pathDrawer = new PathDrawer();
     // this.#map.container.on('click', pathDrawer.renderNextMarker);
@@ -127,7 +135,11 @@ class App {
       'keypress',
       function (e) {
         if (e.key === 'Enter' && !this.#isPathFinished) {
-          this._setPath();
+          // finish path
+          const pathCoordinates = this.#pathDrawer.finishPath();
+          // open form
+          const form = new Form();
+          form.showForm(pathCoordinates);
         }
       }.bind(this)
     );
@@ -138,185 +150,219 @@ class App {
         if (e.key === 'Escape') {
           // clear temporary drawings
           // remove temporary markers
-          this._clearTempData();
+          // this._clearTempData();
           // remove main marker from the map
-          this.#map.removeLayer(this.#mainMarkers);
-          this.#mainMarkers = L.layerGroup().addTo(this.#map);
-          // remove path from the map
-          this.#map.removeLayer(this.#lines);
-          this.#lines = L.layerGroup().addTo(this.#map);
-          // clear markers array
-          this.#markers = [];
-          // close form
-          // allow to add new workout
-          this.#isPathFinished = false;
+          // this.#map.removeLayer(this.#mainMarkers);
+          // this.#mainMarkers = L.layerGroup().addTo(this.#map);
+          // // remove path from the map
+          // this.#map.removeLayer(this.#lines);
+          // this.#lines = L.layerGroup().addTo(this.#map);
+          // // clear markers array
+          // this.#markers = [];
+          // // close form
+          // // allow to add new workout
+          // this.#isPathFinished = false;
         }
       }.bind(this)
     );
   }
 
-  _onMapClick(e) {
-    // return if path is finished
-    if (this.#isPathFinished) return;
+  // _onMapClick(e) {
+  //   // return if path is finished
+  //   // if (this.#isPathFinished) return;
+  //   this.#pathDrawer.drawPath(e.latlng);
 
-    let marker;
+  //   // // create map pints
+  //   // if (this.#markers.length === 0) {
+  //   //   // marker = this._createStartPoint(e);
+  //   //   marker = pathDrawer.renderMarker(e.latlng);
+  //   //   // add event on click
+  //   //   marker.addEventListener(
+  //   //     'click',
+  //   //     function () {
+  //   //       if (this.#markers.length > 1 && !this.#isPathFinished) {
+  //   //         this.#markers.push(marker.getLatLng());
+  //   //         this._setPath();
+  //   //       }
+  //   //     }.bind(this)
+  //   //   );
+  //   // } else {
+  //   //   // marker = this._createPoint(e);
+  //   //   marker = pathDrawer.renderPoint(e.latlng);
+  //   //   // draw temporary line
 
-    // create map pints
-    if (this.#markers.length === 0) {
-      marker = this._createStartPoint(e);
-    } else {
-      marker = this._createPoint(e);
-    }
-    // add coordinates to list
-    const coords2 = marker.getLatLng();
-    this.#markers.push(coords2);
-  }
+  //   //   const tempLineCoords = [
+  //   //     this.#markers[this.#markers.length - 1],
+  //   //     marker.getLatLng(),
+  //   //   ];
+  //   //   // draw
+  //   //   pathDrawer.renderTemporaryLine(tempLineCoords);
 
-  _createStartPoint(e) {
-    // create marker
-    const marker = this._createMainMarker(e.latlng);
+  //   //   // this._drawTempLine(marker);
+  //   //   // add event on click
+  //   //   marker.addEventListener(
+  //   //     'click',
+  //   //     function () {
+  //   //       if (
+  //   //         this.#markers[this.#markers.length - 1] === marker.getLatLng() &&
+  //   //         !this.#isPathFinished
+  //   //       ) {
+  //   //         this._setPath();
+  //   //         document.querySelector('#map').focus();
+  //   //       }
+  //   //     }.bind(this)
+  //   //   );
+  //   // }
+  //   // // add coordinates to list
+  //   // const coords2 = marker.getLatLng();
+  //   // this.#markers.push(coords2);
+  // }
 
-    // .openPopup();
-    // add event to marker
-    marker.addEventListener(
-      'click',
-      function () {
-        if (this.#markers.length > 1 && !this.#isPathFinished) {
-          this.#markers.push(marker.getLatLng());
-          this._setPath();
-        }
-      }.bind(this)
-    );
-    // add marker to main markers layer
-    marker.addTo(this.#mainMarkers);
+  // _createStartPoint(e) {
+  //   // create marker
+  //   // const marker = this._createMainMarker(e.latlng);
 
-    return marker;
-  }
+  //   // .openPopup();
+  //   // add event to marker
+  //   marker.addEventListener(
+  //     'click',
+  //     function () {
+  //       if (this.#markers.length > 1 && !this.#isPathFinished) {
+  //         this.#markers.push(marker.getLatLng());
+  //         this._setPath();
+  //       }
+  //     }.bind(this)
+  //   );
+  //   // add marker to main markers layer
+  //   marker.addTo(this.#map.workoutsLayer);
 
-  _createPoint(e) {
-    // create marker
-    const marker = L.marker(e.latlng, { icon: pointIcon }).addTo(
-      this.#mapContainer
-    );
-    // add marker to temporary layer
-    marker.addTo(this.#tempMarkers);
-    // draw temp line
-    this._drawTempLine(marker);
-    // add event onclick
-    marker.addEventListener(
-      'click',
-      function () {
-        if (
-          this.#markers[this.#markers.length - 1] === marker.getLatLng() &&
-          !this.#isPathFinished
-        ) {
-          this._setPath();
-          document.querySelector('#map').focus();
-        }
-      }.bind(this)
-    );
+  //   return marker;
+  // }
 
-    return marker;
-  }
+  // _createPoint(e) {
+  //   // create marker
+  //   const marker = L.marker(e.latlng, { icon: pointIcon }).addTo(
+  //     this.#mapContainer
+  //   );
+  //   // add marker to temporary layer
+  //   marker.addTo(this.#map.draftWorkoutLayer);
+  //   // draw temp line
+  //   this._drawTempLine(marker);
+  //   // add event onclick
+  //   marker.addEventListener(
+  //     'click',
+  //     function () {
+  //       if (
+  //         this.#markers[this.#markers.length - 1] === marker.getLatLng() &&
+  //         !this.#isPathFinished
+  //       ) {
+  //         this._setPath();
+  //         document.querySelector('#map').focus();
+  //       }
+  //     }.bind(this)
+  //   );
 
-  _drawTempLine(marker) {
-    // get temp coords to draw a line
-    const tempLineCoords = [
-      this.#markers[this.#markers.length - 1],
-      marker.getLatLng(),
-    ];
-    // draw
-    const templine = L.polyline(tempLineCoords, {
-      color: 'red',
-      opacity: 0.5,
-      dashArray: '10, 10',
-      dashOffset: '20',
-    }).addTo(this.#mapContainer);
-    // add temporary line to layer
-    templine.addTo(this.#tempLines);
-  }
+  //   return marker;
+  // }
 
-  _createMainMarker(latlng) {
-    const marker = L.marker(latlng, { icon: locationIcon }).addTo(
-      this.#mapContainer
-    );
-    marker
-      .bindPopup(
-        // specify popup
-        L.popup({
-          maxWidth: 250,
-          minWidth: 100,
-          autoClose: false,
-          closeOnClick: false,
-        })
-      )
-      .setPopupContent(`Main Point!<br/> Start! `);
+  // _drawTempLine(marker) {
+  //   // get temp coords to draw a line
+  //   const tempLineCoords = [
+  //     this.#markers[this.#markers.length - 1],
+  //     marker.getLatLng(),
+  //   ];
+  //   // draw
+  //   const templine = L.polyline(tempLineCoords, {
+  //     color: 'red',
+  //     opacity: 0.5,
+  //     dashArray: '10, 10',
+  //     dashOffset: '20',
+  //   }).addTo(this.#mapContainer);
+  //   // add temporary line to layer
+  //   templine.addTo(this.#map.draftWorkoutLayer);
+  // }
 
-    return marker;
-  }
+  // _createMainMarker(latlng) {
+  //   const marker = L.marker(latlng, { icon: locationIcon }).addTo(
+  //     this.#mapContainer
+  //   );
+  //   marker
+  //     .bindPopup(
+  //       // specify popup
+  //       L.popup({
+  //         maxWidth: 250,
+  //         minWidth: 100,
+  //         autoClose: false,
+  //         closeOnClick: false,
+  //       })
+  //     )
+  //     .setPopupContent(`Main Point!<br/> Start! `);
 
-  _createRandomColor() {
-    var randomColor = Math.floor(Math.random() * 16777215).toString(16);
-    return '#' + randomColor;
-  }
+  //   return marker;
+  // }
 
-  _lastPoint(latlng) {
-    const marker = L.marker(latlng, { icon: locationIcon }).addTo(
-      this.#mapContainer
-    );
-    marker.addTo(this.#mainMarkers);
+  // _createRandomColor() {
+  //   var randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  //   return '#' + randomColor;
+  // }
 
-    return marker;
-  }
+  // _lastPoint(latlng) {
+  //   const marker = L.marker(latlng, { icon: locationIcon }).addTo(
+  //     this.#mapContainer
+  //   );
+  //   marker.addTo(this.#map.workoutsLayer);
 
-  _clearTempData() {
-    // remove temporary markers
-    this.#mapContainer.removeLayer(this.#tempMarkers);
-    this.#tempMarkers = L.layerGroup().addTo(this.#mapContainer);
+  //   return marker;
+  // }
 
-    // remove temporary lines
-    this.#mapContainer.removeLayer(this.#tempLines);
-    this.#tempLines = L.layerGroup().addTo(this.#mapContainer);
-  }
+  // _clearTempData() {
+  //   // remove temporary markers
+  //   this.#mapContainer.removeLayer(this.#tempMarkers);
+  //   this.#tempMarkers = L.layerGroup().addTo(this.#mapContainer);
 
-  _setPath() {
-    // make path variable finished
-    this.#isPathFinished = true;
+  //   // remove temporary lines
+  //   this.#mapContainer.removeLayer(this.#tempLines);
+  //   this.#tempLines = L.layerGroup().addTo(this.#mapContainer);
+  // }
 
-    // set final line!
-    const polyline = L.polyline(this.#markers, {
-      color: this._createRandomColor(),
-      weight: 5,
-    }).addTo(this.#mapContainer);
+  // _setPath() {
+  //   // make path variable finished
+  //   this.#isPathFinished = true;
 
-    // add popup to line
-    polyline
-      .bindPopup(
-        // specify popup
-        L.popup({
-          maxWidth: 250,
-          minWidth: 100,
-          autoClose: false,
-          closeOnClick: false,
-        })
-      )
-      .setPopupContent(`Line Popup!<br/> Hello! `)
-      .openPopup();
+  //   // set final line!
+  //   const polyline = L.polyline(this.#markers, {
+  //     color: this._createRandomColor(),
+  //     weight: 5,
+  //   }).addTo(this.#mapContainer);
 
-    // add line to a layer
-    polyline.addTo(this.#lines);
-    // add last point
-    const lastmarker =
-      this.#markers[this.#markers.length - 1] !== this.#markers[0]
-        ? this.#markers[this.#markers.length - 1]
-        : null;
-    if (lastmarker) {
-      this._lastPoint(lastmarker);
-    }
+  //   // add popup to line
+  //   // polyline
+  //   //   .bindPopup(
+  //   //     // specify popup
+  //   //     L.popup({
+  //   //       maxWidth: 250,
+  //   //       minWidth: 100,
+  //   //       autoClose: false,
+  //   //       closeOnClick: false,
+  //   //     })
+  //   //   )
+  //   //   .setPopupContent(`Line Popup!<br/> Hello! `)
+  //   //   .openPopup();
 
-    // remove temporary lines and points
-    this._clearTempData();
-  }
+  //   // add line to a layer
+  //   // polyline.addTo(this.#lines);
+  //   // add last point
+  //   const lastmarker =
+  //     this.#markers[this.#markers.length - 1] !== this.#markers[0]
+  //       ? this.#markers[this.#markers.length - 1]
+  //       : null;
+  //   if (lastmarker) {
+  //     this._lastPoint(lastmarker);
+  //   }
+
+  //   // remove temporary lines and points
+  //   this._clearTempData();
+  // }
 
   _showForm(mapE) {
     this.#mapEvent = mapE;
@@ -488,7 +534,7 @@ class App {
   _renderWorkout(workout) {
     let html = `
         <li class="workout workout--${workout.type}" data-id="${workout.id}">
-          <div>
+          <div style="grid-column: 1/5;">
             <h2 class="workout__title">${workout.description}</h2>
             <span class="delete-workout">X</span>
           </div>
