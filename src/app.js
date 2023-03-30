@@ -105,10 +105,10 @@ class App {
     this._renderWorkoutMarkers(this.#map);
 
     // Attach event handlers
-    form.addEventListener('submit', this._newWorkout.bind(this));
+    // form.addEventListener('submit', this._newWorkout.bind(this));
 
     // event on dropdown change
-    inputType.addEventListener('change', this._toggleElevationField);
+    // inputType.addEventListener('change', this._toggleElevationField);
 
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
 
@@ -384,12 +384,12 @@ class App {
     setTimeout(() => (form.style.display = 'grid'), 1000);
   }
 
-  _toggleElevationField() {
-    // selecting parent
-    // toggle - one of them id hidden other is visible
-    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
-    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
-  }
+  // _toggleElevationField() {
+  //   // selecting parent
+  //   // toggle - one of them id hidden other is visible
+  //   inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+  //   inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+  // }
 
   _newWorkout(e) {
     // can take an arbitrary number of inputs!
