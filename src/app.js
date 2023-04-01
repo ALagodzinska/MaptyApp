@@ -104,8 +104,13 @@ class App {
     // Render markers
     this._renderWorkoutMarkers(this.#map);
 
+    // Add form class
+    const form = new Form(this.#workouts, this.#pathDrawer);
     // Attach event handlers
-    // form.addEventListener('submit', this._newWorkout.bind(this));
+    // Override method to show form in the end of the path
+    this.#pathDrawer.onFinish = markers => {
+      form.showForm(markers);
+    };
 
     // event on dropdown change
     // inputType.addEventListener('change', this._toggleElevationField);
@@ -136,10 +141,7 @@ class App {
       function (e) {
         if (e.key === 'Enter' && !this.#isPathFinished) {
           // finish path
-          const pathCoordinates = this.#pathDrawer.finishPath();
-          // open form
-          const form = new Form();
-          form.showForm(pathCoordinates);
+          this.#pathDrawer.finishPath();
         }
       }.bind(this)
     );

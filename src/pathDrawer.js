@@ -25,7 +25,7 @@ class PathDrawer {
     let marker;
     // create marker
     if (this.#markers.length === 0) {
-      marker = this.#renderMarker(coords);
+      marker = this.#renderStartEndMarker(coords);
     } else {
       marker = this.#renderPoint(coords);
       // draw temporary line
@@ -53,6 +53,10 @@ class PathDrawer {
     // add event for the first element
     if (this.#markers[0] === markerPosition && !this.#isPathFinished) {
       // add point to array
+      this.#renderTemporaryLine([
+        this.#markers[this.#markers.length - 1],
+        this.#markers[0],
+      ]);
       this.#markers.push(markerPosition);
       this.finishPath();
     }
@@ -64,11 +68,10 @@ class PathDrawer {
       this.finishPath();
     }
   }
-
-  // Create main marker
-  #renderMarker(coords) {
+  // Create temporary marker
+  #renderStartEndMarker(coords) {
     const marker = L.marker(coords, { icon: this.#locationIcon }).addTo(
-      this.#map.workoutsLayer
+      this.#map.draftWorkoutLayer
     );
     return marker;
   }
@@ -90,32 +93,86 @@ class PathDrawer {
     }).addTo(this.#map.draftWorkoutLayer);
     return temporaryLine;
   }
-
+  // callback method
+  onFinish = function (markers) {};
   // returns all path coordinates
   finishPath() {
     // change boolean
     this.#isPathFinished = true;
     // create path
-    this.#renderPath();
+    // this.#renderPath();
     // render last marker
     const lastMarker = this.#markers[this.#markers.length - 1];
     if (lastMarker !== this.#markers[0]) {
-      this.#renderMarker(lastMarker);
+      this.#renderStartEndMarker(lastMarker);
     }
-    this.#clearTemporaryLayer();
+    // this.#clearTemporaryLayer();
     // Keep focus on map
     document.querySelector('#map').focus();
 
-    return this.#markers;
+    // callback on path finish
+    this.onFinish(this.#markers);
   }
 
   // Create Final path
-  #renderPath() {
+  addPathToMap(workout) {
+    // add markers
+    this.#renderWorkoutMarkers(workout);
+    // add line
+    this.#renderPath(workout);
+    // clear temporary
+    this.#clearTemporaryLayer();
+  }
+
+  #renderPath(workout) {
     const polyline = L.polyline(this.#markers, {
       color: this.#generateRandomColor(),
       weight: 5,
     }).addTo(this.#map.workoutsLayer);
+
+    this.#addPopup(polyline, workout).openPopup();
+
     return polyline;
+  }
+
+  #renderWorkoutMarkers(workout) {
+    const firstPoint = workout.coords[0];
+    const lastPoint = workout.coords[workout.coords.length - 1];
+    if (!firstPoint || !lastPoint) return;
+
+    const createMarker = function (coordinates) {
+      const marker = L.marker(coordinates, { icon: this.#locationIcon }).addTo(
+        this.#map.workoutsLayer
+      );
+      this.#addPopup(marker, workout);
+    }.bind(this);
+
+    if (firstPoint === lastPoint) {
+      createMarker(firstPoint);
+    } else {
+      createMarker(firstPoint);
+      createMarker(lastPoint);
+    }
+  }
+
+  #addPopup(item, workout) {
+    const popup = item
+      .bindPopup(
+        // specify popup
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          autoClose: false,
+          closeOnClick: false,
+          className: `${workout.type}-popup`,
+          autoPan: false,
+        })
+      )
+      .setPopupContent(
+        `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
+      );
+
+    return popup;
   }
 
   #generateRandomColor() {

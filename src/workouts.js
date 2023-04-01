@@ -19,11 +19,11 @@ class Workout {
   constructor(item) {
     const { coords, distance, duration, id, date } = item;
 
-    this.coords = coords; // [lat,lng]
+    this.coords = coords; // [lat,lng],[lat,lng]
     this.distance = distance; // in km
     this.duration = duration; // in min
-    this.id = id ? (this.id = id) : (id = (Date.now() + '').slice(-10));
-    this.date = date ? (this.date = date) : new Date();
+    this.id = id ? (this.id = id) : (this.id = (Date.now() + '').slice(-10));
+    this.date = date ? (this.date = new Date(date)) : new Date();
   }
 
   _setDescription() {
@@ -41,7 +41,7 @@ class Running extends Workout {
   type = 'running';
   constructor(item) {
     const { coords, distance, duration, cadence, id, date } = item;
-    super({ coords, distance, duration, id, date: new Date(date) });
+    super({ coords, distance, duration, id, date });
     this.cadence = cadence;
     this.calcPace();
     this._setDescription();
@@ -58,7 +58,7 @@ class Cycling extends Workout {
   type = 'cycling';
   constructor(item) {
     const { coords, distance, duration, elevationGain, id, date } = item;
-    super({ coords, distance, duration, id, date: new Date(date) });
+    super({ coords, distance, duration, id, date });
     this.elevationGain = elevationGain;
     this.calcSpeed();
     this._setDescription();

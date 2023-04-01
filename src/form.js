@@ -1,7 +1,12 @@
 'use strict';
 
+import { Running, Cycling } from './workouts.js';
+
 class Form {
-  constructor() {
+  constructor(workouts, pathDrawer) {
+    this.#workouts = workouts;
+    this.#pathDrawer = pathDrawer;
+
     this.inputType.addEventListener(
       'change',
       this.#toggleElevationField.bind(this)
@@ -22,6 +27,8 @@ class Form {
   messageText = document.querySelector('.message-text');
 
   #workoutPath;
+  #workouts;
+  #pathDrawer;
 
   showForm(workoutPath) {
     this.#workoutPath = workoutPath;
@@ -89,7 +96,8 @@ class Form {
     const type = this.inputType.value;
     const distance = +this.inputDistance.value;
     const duration = +this.inputDuration.value;
-    const path = this.#workoutPath;
+    const coords = this.#workoutPath;
+    let workout;
 
     if (type === 'running') {
       const cadence = +this.inputCadence.value;
@@ -104,12 +112,7 @@ class Form {
         return;
       }
       // create new workout
-      //   workout = new Running({
-      //     coords: [lat, lng],
-      //     distance,
-      //     duration,
-      //     cadence,
-      //   });
+      workout = new Running({ coords, distance, duration, cadence });
     }
     if (type === 'cycling') {
       const elevation = +this.inputElevation.value;
@@ -122,13 +125,17 @@ class Form {
         return;
       }
       // Create new workout
-      //   workout = new Cycling({
-      //     coords: [lat, lng],
-      //     distance,
-      //     duration,
-      //     elevation,
-      //   });
+      workout = new Cycling({ coords, distance, duration, elevation });
     }
+    // add to workout list
+    this.#workouts.push(workout);
+    // show success message
+    this.#showSuccessMessage();
+    this.#hideMessage();
+    // Hide form + clear input fields
+    this.#hideForm();
+    // set path
+    this.#pathDrawer.addPathToMap(workout);
   }
 
   #toggleElevationField() {
