@@ -33,9 +33,17 @@ class Form {
   #workoutDisplay;
 
   showForm(workoutPath) {
+    // get path coordinates
     this.#workoutPath = workoutPath;
+    // get distance
+    const distance = this.#calculateDistance(this.#workoutPath);
+    // set distance to distance field
+    inputDistance.value = distance;
+    // disable distance field
+    inputDistance.disabled = true;
+
     form.classList.remove('hidden');
-    inputDistance.focus();
+    inputDuration.focus();
     sortBar.classList.add('hidden');
   }
 
@@ -49,6 +57,26 @@ class Form {
     form.style.display = 'none';
     form.classList.add('hidden');
     setTimeout(() => (form.style.display = 'grid'), 1000);
+  }
+
+  #calculateDistance(coords) {
+    let calculatedDistance = 0.0;
+
+    for (let i = 0; i < coords.length; i++) {
+      // return if is the last point
+      if (!coords[i + 1]) continue;
+
+      calculatedDistance += this.#calculateDistanceBetweenTwoPoints(
+        coords[i],
+        coords[i + 1]
+      );
+    }
+
+    return calculatedDistance.toFixed(1);
+  }
+
+  #calculateDistanceBetweenTwoPoints(from, to) {
+    return from.distanceTo(to).toFixed(0) / 1000;
   }
 
   #numberInputsValidation(...inputs) {
@@ -101,25 +129,6 @@ class Form {
     const duration = +inputDuration.value;
     const coords = this.#workoutPath;
     let workout;
-
-    ///////////////////
-    let calculatedDistance = 0.0;
-
-    const calculateDistance = function (from, to) {
-      // console.log(from.distanceTo(to).toFixed(0) / 1000);
-      return from.distanceTo(to).toFixed(0) / 1000;
-    };
-
-    for (let i = 0; i < coords.length; i++) {
-      // return if is the last point
-      if (!coords[i + 1]) continue;
-
-      calculatedDistance += calculateDistance(coords[i], coords[i + 1]);
-      console.log(calculatedDistance);
-    }
-
-    console.log(calculatedDistance);
-    ///////////////////
 
     if (type === 'running') {
       const cadence = +inputCadence.value;
