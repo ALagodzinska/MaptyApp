@@ -102,6 +102,25 @@ class Form {
     const coords = this.#workoutPath;
     let workout;
 
+    ///////////////////
+    let calculatedDistance = 0.0;
+
+    const calculateDistance = function (from, to) {
+      // console.log(from.distanceTo(to).toFixed(0) / 1000);
+      return from.distanceTo(to).toFixed(0) / 1000;
+    };
+
+    for (let i = 0; i < coords.length; i++) {
+      // return if is the last point
+      if (!coords[i + 1]) continue;
+
+      calculatedDistance += calculateDistance(coords[i], coords[i + 1]);
+      console.log(calculatedDistance);
+    }
+
+    console.log(calculatedDistance);
+    ///////////////////
+
     if (type === 'running') {
       const cadence = +inputCadence.value;
 

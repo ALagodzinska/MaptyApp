@@ -1,7 +1,6 @@
 'use strict';
 
 import { WorkoutStorage } from './storage.js';
-import { Running, Cycling } from './workouts.js';
 import { Map } from './map.js';
 import { PathDrawer } from './pathDrawer.js';
 import { Form } from './form.js';
@@ -39,7 +38,7 @@ class App {
     // initialize path drawer
     this.#pathDrawer = new PathDrawer(this.#map);
 
-    // TODO : remove this variable
+    // remove this variable
     this.#mapContainer = this.#map.container;
 
     // Get data from Local storage
