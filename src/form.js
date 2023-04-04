@@ -2,50 +2,53 @@
 
 import { Running, Cycling } from './workouts.js';
 
+const form = document.querySelector('.form');
+const inputType = document.querySelector('.form__input--type');
+const inputDistance = document.querySelector('.form__input--distance');
+const inputDuration = document.querySelector('.form__input--duration');
+const inputCadence = document.querySelector('.form__input--cadence');
+const inputElevation = document.querySelector('.form__input--elevation');
+const sortBar = document.querySelector('.sort-bar');
+
+const messageContainer = document.querySelector('.message');
+const messageIcon = document.querySelector('.message-icon');
+const messageText = document.querySelector('.message-text');
+
 class Form {
-  constructor(workouts, pathDrawer) {
+  constructor(workouts, pathDrawer, storage, workoutDisplay) {
     this.#workouts = workouts;
     this.#pathDrawer = pathDrawer;
+    this.#storage = storage;
+    this.#workoutDisplay = workoutDisplay;
 
-    this.inputType.addEventListener(
-      'change',
-      this.#toggleElevationField.bind(this)
-    );
+    inputType.addEventListener('change', this.#toggleElevationField.bind(this));
 
-    this.form.addEventListener('submit', this.submitForm.bind(this));
+    form.addEventListener('submit', this.submitForm.bind(this));
   }
-
-  form = document.querySelector('.form');
-  inputType = document.querySelector('.form__input--type');
-  inputDistance = document.querySelector('.form__input--distance');
-  inputDuration = document.querySelector('.form__input--duration');
-  inputCadence = document.querySelector('.form__input--cadence');
-  inputElevation = document.querySelector('.form__input--elevation');
-
-  messageContainer = document.querySelector('.message');
-  messageIcon = document.querySelector('.message-icon');
-  messageText = document.querySelector('.message-text');
 
   #workoutPath;
   #workouts;
   #pathDrawer;
+  #storage;
+  #workoutDisplay;
 
   showForm(workoutPath) {
     this.#workoutPath = workoutPath;
-    this.form.classList.remove('hidden');
-    this.inputDistance.focus();
+    form.classList.remove('hidden');
+    inputDistance.focus();
+    sortBar.classList.add('hidden');
   }
 
-  #hideForm() {
+  hideForm() {
     // Empty Input
-    this.inputDistance.value =
-      this.inputDuration.value =
-      this.inputCadence.value =
-      this.inputElevation.value =
+    inputDistance.value =
+      inputDuration.value =
+      inputCadence.value =
+      inputElevation.value =
         '';
-    this.form.style.display = 'none';
-    this.form.classList.add('hidden');
-    setTimeout(() => (this.form.style.display = 'grid'), 1000);
+    form.style.display = 'none';
+    form.classList.add('hidden');
+    setTimeout(() => (form.style.display = 'grid'), 1000);
   }
 
   #numberInputsValidation(...inputs) {
@@ -57,33 +60,33 @@ class Form {
   }
 
   #showSuccessMessage() {
-    this.messageContainer.classList.add('correct');
-    this.messageContainer.classList.remove('warning');
-    this.messageContainer.classList.remove('hidden');
-    this.messageText.innerHTML = 'Workout successfully created!';
-    this.messageIcon.src = 'correct.png';
+    messageContainer.classList.add('correct');
+    messageContainer.classList.remove('warning');
+    messageContainer.classList.remove('hidden');
+    messageText.innerHTML = 'Workout successfully created!';
+    messageIcon.src = 'correct.png';
   }
 
   #showErrorMessage() {
-    this.messageContainer.classList.add('warning');
-    this.messageContainer.classList.remove('correct');
-    this.messageContainer.classList.remove('hidden');
-    this.messageText.innerHTML = 'Inputs have to be positive numbers!';
-    this.messageIcon.src = 'warning.png';
+    messageContainer.classList.add('warning');
+    messageContainer.classList.remove('correct');
+    messageContainer.classList.remove('hidden');
+    messageText.innerHTML = 'Inputs have to be positive numbers!';
+    messageIcon.src = 'warning.png';
   }
 
   #hideMessage() {
     setTimeout(
       function () {
-        this.messageContainer.classList.add('animated');
+        messageContainer.classList.add('animated');
       }.bind(this),
       3000
     );
 
     setTimeout(
       function () {
-        this.messageContainer.classList.add('hidden');
-        this.messageContainer.classList.remove('animated');
+        messageContainer.classList.add('hidden');
+        messageContainer.classList.remove('animated');
       }.bind(this),
       4000
     );
@@ -93,14 +96,14 @@ class Form {
     e.preventDefault();
 
     // get data from form
-    const type = this.inputType.value;
-    const distance = +this.inputDistance.value;
-    const duration = +this.inputDuration.value;
+    const type = inputType.value;
+    const distance = +inputDistance.value;
+    const duration = +inputDuration.value;
     const coords = this.#workoutPath;
     let workout;
 
     if (type === 'running') {
-      const cadence = +this.inputCadence.value;
+      const cadence = +inputCadence.value;
 
       // Check if data is valid
       if (
@@ -115,9 +118,9 @@ class Form {
       workout = new Running({ coords, distance, duration, cadence });
     }
     if (type === 'cycling') {
-      const elevation = +this.inputElevation.value;
+      const elevationGain = +inputElevation.value;
       if (
-        !this.#numberInputsValidation(distance, duration, elevation) ||
+        !this.#numberInputsValidation(distance, duration, elevationGain) ||
         !this.#positiveNumberValidation(distance, duration)
       ) {
         this.#showErrorMessage();
@@ -125,26 +128,27 @@ class Form {
         return;
       }
       // Create new workout
-      workout = new Cycling({ coords, distance, duration, elevation });
+      workout = new Cycling({ coords, distance, duration, elevationGain });
     }
+
     // add to workout list
     this.#workouts.push(workout);
     // show success message
     this.#showSuccessMessage();
     this.#hideMessage();
     // Hide form + clear input fields
-    this.#hideForm();
+    this.hideForm();
     // set path
     this.#pathDrawer.addPathToMap(workout);
+    // Render workout on a list
+    this.#workoutDisplay.renderWorkouts(this.#workouts);
+    // Set local storage to all workouts
+    this.#storage.set(this.#workouts);
   }
 
   #toggleElevationField() {
-    this.inputElevation
-      .closest('.form__row')
-      .classList.toggle('form__row--hidden');
-    this.inputCadence
-      .closest('.form__row')
-      .classList.toggle('form__row--hidden');
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
   }
 }
 

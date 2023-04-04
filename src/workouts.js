@@ -13,17 +13,21 @@ const months = [
   'December',
 ];
 
+import { Colors } from './colors.js';
+const colorStorage = new Colors();
+
 class Workout {
   clicks = 0;
 
   constructor(item) {
-    const { coords, distance, duration, id, date } = item;
+    const { coords, distance, duration, id, date, color } = item;
 
     this.coords = coords; // [lat,lng],[lat,lng]
     this.distance = distance; // in km
     this.duration = duration; // in min
     this.id = id ? (this.id = id) : (this.id = (Date.now() + '').slice(-10));
     this.date = date ? (this.date = new Date(date)) : new Date();
+    this.color = color ? (this.color = color) : colorStorage.getRandomColor();
   }
 
   _setDescription() {
@@ -40,8 +44,8 @@ class Workout {
 class Running extends Workout {
   type = 'running';
   constructor(item) {
-    const { coords, distance, duration, cadence, id, date } = item;
-    super({ coords, distance, duration, id, date });
+    const { coords, distance, duration, cadence, id, date, color } = item;
+    super({ coords, distance, duration, id, date, color });
     this.cadence = cadence;
     this.calcPace();
     this._setDescription();
@@ -57,8 +61,8 @@ class Running extends Workout {
 class Cycling extends Workout {
   type = 'cycling';
   constructor(item) {
-    const { coords, distance, duration, elevationGain, id, date } = item;
-    super({ coords, distance, duration, id, date });
+    const { coords, distance, duration, elevationGain, id, date, color } = item;
+    super({ coords, distance, duration, id, date, color });
     this.elevationGain = elevationGain;
     this.calcSpeed();
     this._setDescription();

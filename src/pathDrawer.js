@@ -7,7 +7,7 @@ class PathDrawer {
 
   #map;
   #markers = [];
-  #isPathFinished = false;
+  isPathFinished = false;
 
   #pointIcon = L.icon({
     iconUrl: 'dot.png',
@@ -20,7 +20,7 @@ class PathDrawer {
   });
 
   drawPath(coords) {
-    if (this.#isPathFinished) return;
+    if (this.isPathFinished) return;
 
     let marker;
     // create marker
@@ -51,7 +51,7 @@ class PathDrawer {
   #finishEventForMarker(markerPosition) {
     if (this.#markers.length <= 1) return;
     // add event for the first element
-    if (this.#markers[0] === markerPosition && !this.#isPathFinished) {
+    if (this.#markers[0] === markerPosition && !this.isPathFinished) {
       // add point to array
       this.#renderTemporaryLine([
         this.#markers[this.#markers.length - 1],
@@ -63,7 +63,7 @@ class PathDrawer {
     // add event if element is last
     else if (
       this.#markers[this.#markers.length - 1] === markerPosition &&
-      !this.#isPathFinished
+      !this.isPathFinished
     ) {
       this.finishPath();
     }
@@ -97,8 +97,11 @@ class PathDrawer {
   onFinish = function (markers) {};
   // returns all path coordinates
   finishPath() {
+    // return if it is only one point
+    if (this.#markers.length <= 1) return;
+
     // change boolean
-    this.#isPathFinished = true;
+    this.isPathFinished = true;
     // create path
     // this.#renderPath();
     // render last marker
@@ -112,6 +115,20 @@ class PathDrawer {
 
     // callback on path finish
     this.onFinish(this.#markers);
+
+    // reset markers
+    this.#markers = [];
+  }
+
+  renderWorkoutsOnMap(workouts) {
+    // renew marker array
+    this.#markers = [];
+
+    this.#clearTemporaryLayer();
+    this.#clearWorkoutsLayer();
+    workouts.forEach(workout => {
+      this.addPathToMap(workout);
+    });
   }
 
   // Create Final path
@@ -122,11 +139,15 @@ class PathDrawer {
     this.#renderPath(workout);
     // clear temporary
     this.#clearTemporaryLayer();
+    // set path finished to false
+    this.isPathFinished = false;
   }
 
   #renderPath(workout) {
-    const polyline = L.polyline(this.#markers, {
-      color: this.#generateRandomColor(),
+    if (workout.coords.length === 0) return;
+
+    const polyline = L.polyline(workout.coords, {
+      color: workout.color,
       weight: 5,
     }).addTo(this.#map.workoutsLayer);
 
@@ -138,7 +159,6 @@ class PathDrawer {
   #renderWorkoutMarkers(workout) {
     const firstPoint = workout.coords[0];
     const lastPoint = workout.coords[workout.coords.length - 1];
-    if (!firstPoint || !lastPoint) return;
 
     const createMarker = function (coordinates) {
       const marker = L.marker(coordinates, { icon: this.#locationIcon }).addTo(
@@ -147,7 +167,7 @@ class PathDrawer {
       this.#addPopup(marker, workout);
     }.bind(this);
 
-    if (firstPoint === lastPoint) {
+    if (firstPoint === lastPoint || !lastPoint) {
       createMarker(firstPoint);
     } else {
       createMarker(firstPoint);
@@ -175,14 +195,13 @@ class PathDrawer {
     return popup;
   }
 
-  #generateRandomColor() {
-    var randomColor = Math.floor(Math.random() * 16777215).toString(16);
-    return '#' + randomColor;
-  }
-
   #clearTemporaryLayer() {
     // remove temporary markers and lines
     this.#map.draftWorkoutLayer.clearLayers();
+  }
+
+  #clearWorkoutsLayer() {
+    this.#map.workoutsLayer.clearLayers();
   }
 }
 
