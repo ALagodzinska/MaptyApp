@@ -12,12 +12,12 @@ class PathDrawer {
   isPathFinished = false;
 
   #pointIcon = L.icon({
-    iconUrl: 'dot.png',
+    iconUrl: 'img/dot.png',
     iconSize: [20, 20],
   });
 
   #locationIcon = L.icon({
-    iconUrl: 'location.png',
+    iconUrl: 'img/location.png',
     iconSize: [30, 30],
   });
 

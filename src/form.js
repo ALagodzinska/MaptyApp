@@ -92,7 +92,7 @@ class Form {
     messageContainer.classList.remove('warning');
     messageContainer.classList.remove('hidden');
     messageText.innerHTML = 'Workout successfully created!';
-    messageIcon.src = 'correct.png';
+    messageIcon.src = 'img/correct.png';
   }
 
   #showErrorMessage() {
@@ -100,7 +100,7 @@ class Form {
     messageContainer.classList.remove('correct');
     messageContainer.classList.remove('hidden');
     messageText.innerHTML = 'Inputs have to be positive numbers!';
-    messageIcon.src = 'warning.png';
+    messageIcon.src = 'img/warning.png';
   }
 
   #hideMessage() {
