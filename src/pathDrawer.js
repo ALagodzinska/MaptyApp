@@ -1,5 +1,7 @@
 'use strict';
 
+import { getWeatherEmoji } from './weather.js';
+
 class PathDrawer {
   constructor(map) {
     this.#map = map;
@@ -189,7 +191,17 @@ class PathDrawer {
         })
       )
       .setPopupContent(
-        `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
+        `<div>
+          <div style="grid-column: 1/5;">
+            <h2 class="popup__title">${workout.description}</h2>
+          </div>
+          <div class="workout__details">
+            <span class="workout__icon">${getWeatherEmoji(
+              workout.weatherCode
+            )}</span>
+            <span class="workout__value">${workout.temperature}</span>
+            <span class="workout__unit">°C</span>
+          </div>`
       );
 
     return popup;

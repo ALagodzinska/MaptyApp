@@ -20,7 +20,17 @@ class Workout {
   clicks = 0;
 
   constructor(item) {
-    const { coords, distance, duration, id, date, color } = item;
+    const {
+      coords,
+      distance,
+      duration,
+      id,
+      date,
+      color,
+      place,
+      temperature,
+      weatherCode,
+    } = item;
 
     this.coords = coords; // [lat,lng],[lat,lng]
     this.distance = distance; // in km
@@ -28,12 +38,15 @@ class Workout {
     this.id = id ? (this.id = id) : (this.id = (Date.now() + '').slice(-10));
     this.date = date ? (this.date = new Date(date)) : new Date();
     this.color = color ? (this.color = color) : colorStorage.getRandomColor();
+    this.place = place;
+    this.temperature = temperature;
+    this.weatherCode = weatherCode;
   }
 
   _setDescription() {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
-    } ${this.date.getDate()}`;
+    } ${this.date.getDate()} in the ${this.place}`;
   }
 
   click() {
@@ -44,8 +57,29 @@ class Workout {
 class Running extends Workout {
   type = 'running';
   constructor(item) {
-    const { coords, distance, duration, cadence, id, date, color } = item;
-    super({ coords, distance, duration, id, date, color });
+    const {
+      coords,
+      distance,
+      duration,
+      cadence,
+      id,
+      date,
+      color,
+      place,
+      temperature,
+      weatherCode,
+    } = item;
+    super({
+      coords,
+      distance,
+      duration,
+      id,
+      date,
+      color,
+      place,
+      temperature,
+      weatherCode,
+    });
     this.cadence = cadence;
     this.calcPace();
     this._setDescription();
@@ -61,8 +95,29 @@ class Running extends Workout {
 class Cycling extends Workout {
   type = 'cycling';
   constructor(item) {
-    const { coords, distance, duration, elevationGain, id, date, color } = item;
-    super({ coords, distance, duration, id, date, color });
+    const {
+      coords,
+      distance,
+      duration,
+      elevationGain,
+      id,
+      date,
+      color,
+      place,
+      temperature,
+      weatherCode,
+    } = item;
+    super({
+      coords,
+      distance,
+      duration,
+      id,
+      date,
+      color,
+      place,
+      temperature,
+      weatherCode,
+    });
     this.elevationGain = elevationGain;
     this.calcSpeed();
     this._setDescription();

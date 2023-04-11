@@ -120,7 +120,56 @@ class Form {
     );
   }
 
-  submitForm(e) {
+  async getPlaceName(lat, lng) {
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&format=json&apiKey=74bf4ef72eb1473c9771c37dba73afef`
+      );
+
+      if (!response.ok)
+        throw new Error(`Problem with geocoding ${response.status}!`);
+
+      const { results } = await response.json();
+
+      const location = results[0];
+
+      if (!location) throw new Error(`Cant find location! ${response.status}`);
+
+      if (!location.suburb) {
+        return location.address_line1;
+      } else {
+        return location.suburb;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async getWeather(lat, lng) {
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`
+      );
+
+      if (!response.ok)
+        throw new Error(
+          `Problem with getting weather forecast ${response.status}!`
+        );
+
+      const result = await response.json();
+
+      return result.current_weather;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  /// Weather
+
+  // `http://api.weatherstack.com/current?access_key=17cdb4fba9284df01cb830853a14647c&query=${lat},${lng}`
+
+  ///
+
+  async submitForm(e) {
     e.preventDefault();
 
     // get data from form
@@ -129,6 +178,12 @@ class Form {
     const duration = +inputDuration.value;
     const coords = this.#workoutPath;
     let workout;
+
+    const place = await this.getPlaceName(coords[0].lat, coords[0].lng);
+    const { temperature, weathercode: weatherCode } = await this.getWeather(
+      coords[0].lat,
+      coords[0].lng
+    );
 
     if (type === 'running') {
       const cadence = +inputCadence.value;
@@ -143,7 +198,15 @@ class Form {
         return;
       }
       // create new workout
-      workout = new Running({ coords, distance, duration, cadence });
+      workout = new Running({
+        coords,
+        distance,
+        duration,
+        cadence,
+        place,
+        temperature,
+        weatherCode,
+      });
     }
     if (type === 'cycling') {
       const elevationGain = +inputElevation.value;
@@ -156,7 +219,15 @@ class Form {
         return;
       }
       // Create new workout
-      workout = new Cycling({ coords, distance, duration, elevationGain });
+      workout = new Cycling({
+        coords,
+        distance,
+        duration,
+        elevationGain,
+        place,
+        temperature,
+        weatherCode,
+      });
     }
 
     // add to workout list
