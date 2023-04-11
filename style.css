@@ -405,3 +405,9 @@ a:visited {
   background-color: var(--color-brand--1);
   color: #fff;
 }
+
+.popup__data {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

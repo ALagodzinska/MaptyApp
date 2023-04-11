@@ -177,6 +177,18 @@ class PathDrawer {
     }
   }
 
+  getTimeEmoji(hours) {
+    if (hours >= 6 && hours <= 12) {
+      return '🌅';
+    } else if (hours > 12 && hours < 18) {
+      return '🌄';
+    } else if (hours >= 18) {
+      return '🌆';
+    } else if (hours >= 0 && hours < 6) {
+      return '🌃';
+    }
+  }
+
   #addPopup(item, workout) {
     const popup = item
       .bindPopup(
@@ -195,12 +207,20 @@ class PathDrawer {
           <div style="grid-column: 1/5;">
             <h2 class="popup__title">${workout.description}</h2>
           </div>
-          <div class="workout__details">
-            <span class="workout__icon">${getWeatherEmoji(
-              workout.weatherCode
-            )}</span>
-            <span class="workout__value">${workout.temperature}</span>
-            <span class="workout__unit">°C</span>
+          <div class="popup__data">
+            <div class="workout__details">
+              <div class="workout__details">
+                <span class="workout__icon">${this.getTimeEmoji(
+                  workout.date.getHours()
+                )}</span>
+                <span class="workout__value">${workout.date.getHours()}:${workout.date.getMinutes()}</span>
+              </div>
+                <span class="workout__icon">${getWeatherEmoji(
+                  workout.weatherCode
+                )}</span>
+                <span class="workout__value">${workout.temperature}</span>
+                <span class="workout__unit">°C</span>
+              </div>            
           </div>`
       );
 

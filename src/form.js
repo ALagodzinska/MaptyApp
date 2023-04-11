@@ -163,11 +163,6 @@ class Form {
       console.error(err);
     }
   }
-  /// Weather
-
-  // `http://api.weatherstack.com/current?access_key=17cdb4fba9284df01cb830853a14647c&query=${lat},${lng}`
-
-  ///
 
   async submitForm(e) {
     e.preventDefault();
@@ -179,10 +174,13 @@ class Form {
     const coords = this.#workoutPath;
     let workout;
 
-    const place = await this.getPlaceName(coords[0].lat, coords[0].lng);
+    // Get middle way coords for precise location
+    var middleCoords = coords[Math.round((coords.length - 1) / 2)];
+
+    const place = await this.getPlaceName(middleCoords.lat, middleCoords.lng);
     const { temperature, weathercode: weatherCode } = await this.getWeather(
-      coords[0].lat,
-      coords[0].lng
+      middleCoords.lat,
+      middleCoords.lng
     );
 
     if (type === 'running') {
