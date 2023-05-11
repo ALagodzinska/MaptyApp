@@ -416,8 +416,8 @@ a:visited {
   font-size: 1.5rem;
   color: white;
   cursor: pointer;
-  margin: auto;
   margin-bottom: 1rem;
+  margin: auto;
   text-decoration: underline !important;
 }
 
