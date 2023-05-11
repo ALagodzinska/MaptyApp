@@ -411,3 +411,30 @@ a:visited {
   gap: 10px;
   justify-content: flex-end;
 }
+
+.help-btn {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  background: none;
+  color: white;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.modal-title {
+  color: #0d172a;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.close {
+  font-size: 3rem;
+}
+
+.modal-body {
+  color: black;
+  font-size: 1.5rem;
+}
