@@ -413,13 +413,12 @@ a:visited {
 }
 
 .help-btn {
-  margin-bottom: 1rem;
   font-size: 1.5rem;
-  background: none;
   color: white;
-  border: none;
   cursor: pointer;
-  text-decoration: underline;
+  margin: auto;
+  margin-bottom: 1rem;
+  text-decoration: underline !important;
 }
 
 .modal-title {
