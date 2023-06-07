@@ -33,7 +33,7 @@ class App {
     // Get Users Position
     this.#map = new Map();
     this.#map.renderContainer();
-    await this.#map.detectCurrentLocation();
+    const data = await this.#map.detectCurrentLocation();
 
     // initialize path drawer
     this.#pathDrawer = new PathDrawer(this.#map);

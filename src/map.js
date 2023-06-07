@@ -18,7 +18,9 @@ class Map {
 
   #getCurrentPosition() {
     return new Promise(function (resolve, reject) {
-      navigator.geolocation.getCurrentPosition(resolve, reject);
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        timeout: 1000,
+      });
     });
   }
 
@@ -26,7 +28,7 @@ class Map {
     // Create map
     this.container = L.map('map');
     // set default view
-    this.container.setView([0, 0], 13);
+    this.container.setView([49.246292, -123.116226], 13);
     // Add Layers
     this.workoutsLayer = L.layerGroup().addTo(this.container);
     this.draftWorkoutLayer = L.layerGroup().addTo(this.container);
@@ -41,11 +43,12 @@ class Map {
   detectCurrentLocation() {
     this.#loadCurrentPosition()
       .then(position => {
+        console.log(position);
         const { latitude, longitude } = position.coords;
         const coords = [latitude, longitude];
         this.container.setView(coords, 13);
       })
-      .catch(() => alert('Could not get your position!'));
+      .catch(error => alert('Could not get your position! ' + error.message));
   }
 }
 
